@@ -76,7 +76,8 @@ private:
 class ConfigPaneModel: public QAbstractListModel
 {
 public:
-    ConfigPaneModel(): QAbstractListModel()
+    ConfigPaneModel(int iconSize)
+        : mIconSize(iconSize, iconSize)
     {
         QString menuFile = XdgMenu::getMenuFileName("config.menu");
         XdgMenu xdgMenu;
@@ -150,58 +151,28 @@ public:
             return m_list[index.row()].id();
         if (role == Qt::DecorationRole)
         {
-            return m_list[index.row()].xdg().icon(XdgIcon::defaultApplicationIcon());
+            QPixmap pixmap = m_list[index.row()].xdg().icon(XdgIcon::defaultApplicationIcon()).pixmap(mIconSize);
+            return QIcon(pixmap.copy(QRect(QPoint(0, 0), mIconSize)));
         }
         return QVariant();
     }
 
 private:
     QList<ConfigPane> m_list;
+    QSize mIconSize;
 };
 
 }
-
-
-class ConfigItemDelegate : public QStyledItemDelegate
-{
-public:
-    ConfigItemDelegate(QCategorizedView* view) : mView(view) { }
-    ~ConfigItemDelegate() { }
-
-    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
-    {
-        int height = QStyledItemDelegate::sizeHint(option, index).height();
-        return QSize(mView->gridSize().width(), qMin(height, mView->gridSize().height()));
-    }
-
-protected:
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
-    {
-        QStyleOptionViewItemV4 opt = option;
-        initStyleOption(&opt, index);
-
-        QSize size(mView->gridSize().width(), mView->iconSize().height());
-        QPixmap pixmap = opt.icon.pixmap(mView->iconSize());
-        opt.icon = QIcon(pixmap.copy(QRect(QPoint(0, 0), size)));
-        opt.decorationSize = size;
-
-        QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &opt, painter);
-    }
-
-private:
-    QCategorizedView *mView;
-};
-
 
 LxQtConfig::MainWindow::MainWindow() : QMainWindow()
 {
     setupUi(this);
 
-    model = new ConfigPaneModel();
+    model = new ConfigPaneModel(32);
 
     view->setViewMode(QListView::IconMode);
     view->setIconSize(QSize(32, 32));
-    view->setGridSize(QSize(100, 100));
+    view->setGridSize(QSize(150, 100));
     view->setWordWrap(true);
     view->setUniformItemSizes(true);
     view->setCategoryDrawer(new QCategoryDrawerV3(view));
@@ -252,7 +223,6 @@ void LxQtConfig::MainWindow::load()
     proxyModel->setSourceModel(model);
 
     view->setModel(proxyModel);
-    view->setItemDelegate(new ConfigItemDelegate(view));
 
     QApplication::restoreOverrideCursor();
 }
