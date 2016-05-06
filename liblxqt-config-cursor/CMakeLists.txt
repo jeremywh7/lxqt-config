@@ -89,7 +89,7 @@ install(FILES
     COMPONENT Runtime
 )
 install(FILES
-    man/lxqt-config-mouse.1
+    man/lxqt-config-cursor.1
     DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
     COMPONENT Runtime
 )
